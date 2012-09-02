@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="nvtristrip">
+      <UniqueIdentifier>{71079b66-3d1e-47a0-8158-a600e6e49bc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cets-pterdiman">
+      <UniqueIdentifier>{19ec309f-4480-4f3c-9048-b163e75ee401}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ac">
+      <UniqueIdentifier>{a6a88c29-17fe-49f9-a515-c61464a7bed6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NvTriStrip\NvTriStrip.cpp">
+      <Filter>nvtristrip</Filter>
+    </ClCompile>
+    <ClCompile Include="NvTriStrip\NvTriStripObjects.cpp">
+      <Filter>nvtristrip</Filter>
+    </ClCompile>
+    <ClCompile Include="cets-pterdiman\Adjacency.cpp">
+      <Filter>cets-pterdiman</Filter>
+    </ClCompile>
+    <ClCompile Include="cets-pterdiman\CustomArray.cpp">
+      <Filter>cets-pterdiman</Filter>
+    </ClCompile>
+    <ClCompile Include="cets-pterdiman\RevisitedRadix.cpp">
+      <Filter>cets-pterdiman</Filter>
+    </ClCompile>
+    <ClCompile Include="cets-pterdiman\Striper.cpp">
+      <Filter>cets-pterdiman</Filter>
+    </ClCompile>
+    <ClCompile Include="cets-pterdiman\Strips.cpp">
+      <Filter>cets-pterdiman</Filter>
+    </ClCompile>
+    <ClCompile Include="ac\tc.c">
+      <Filter>ac</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="stripping.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NvTriStrip\NvTriStrip.h">
+      <Filter>nvtristrip</Filter>
+    </ClInclude>
+    <ClInclude Include="NvTriStrip\NvTriStripObjects.h">
+      <Filter>nvtristrip</Filter>
+    </ClInclude>
+    <ClInclude Include="NvTriStrip\VertexCache.h">
+      <Filter>nvtristrip</Filter>
+    </ClInclude>
+    <ClInclude Include="cets-pterdiman\Adjacency.h">
+      <Filter>cets-pterdiman</Filter>
+    </ClInclude>
+    <ClInclude Include="cets-pterdiman\CustomArray.h">
+      <Filter>cets-pterdiman</Filter>
+    </ClInclude>
+    <ClInclude Include="cets-pterdiman\RevisitedRadix.h">
+      <Filter>cets-pterdiman</Filter>
+    </ClInclude>
+    <ClInclude Include="cets-pterdiman\Striper.h">
+      <Filter>cets-pterdiman</Filter>
+    </ClInclude>
+    <ClInclude Include="ac\tc.h">
+      <Filter>ac</Filter>
+    </ClInclude>
+    <ClInclude Include="stripping.h" />
+    <ClInclude Include="types.h" />
+  </ItemGroup>
+</Project>
