@@ -72,9 +72,16 @@ void Disconnect(Face* f, Face* except, LIST_DECLARE(Face, dualLink) unconnected[
 			}
 			else if ( f->adj[i]->set == Face::CONNECTED )
 			{
-				u32 c = f->adj[i]->dualConnectivity - 1;
-				assert(c < 2);
-				connected[c].InsertTail(f->adj[i]);
+				if ( f->adj[i]->dualConnectivity == 0 )
+				{
+					Disconnect(f->adj[i], 0, unconnected, connected);
+				}
+				else
+				{
+					u32 c = f->adj[i]->dualConnectivity - 1;
+					assert(c < 2);
+					connected[c].InsertTail(f->adj[i]);
+				}
 			}
 			f->dual[i] = false;
 		}
@@ -636,6 +643,12 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 					assert(0 && "disconnecting a fully connected node !");
 				}
 			}
+			else
+			{
+				face[f]->dualLink.Unlink();
+				face[f]->RemoveFromDual(face[(f + 1) % 2]);
+				unconnected[face[f]->dualConnectivity].InsertTail(face[f]);
+			}
 		}
 	}
 
@@ -655,6 +668,18 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		nbStrips++;
 		strip.InsertHead(f);
 	}
+
+#ifdef _DEBUG
+	u32 realNbStrips = 0;
+	for ( u32 i = 0 ; i < nbStrips ; i++ )
+		if ( !strips[i].Empty() )
+			realNbStrips++;
+
+	printf("[end] strips:%d(%d) U0:%d U1:%d C1:%d U2:%d C2:%d U3:%d\n",
+		realNbStrips, nbStrips,
+		Length(unconnected[0]), Length(unconnected[1]), Length(connected[0]),
+		Length(unconnected[2]), Length(connected[1]), Length(unconnected[3]));
+#endif
 
 	ShowDebug(faces, nbTris, 0, 0, strips, nbStrips);
 

@@ -130,6 +130,17 @@ void BeginSceneOpenGL()
 		sinf(rotatePhi) * cosf(rotateTheta) * dist,
 		0.f, h, 0.f,
 		0., 1., 0.);
+	glBegin(GL_LINES);
+	glColor3f(1.f, 0.f, 0.f);
+	glVertex3f(0.f, 0.f, 0.f);
+	glVertex3f(1000.f, 0.f, 0.f);
+	glColor3f(0.f, 1.f, 0.f);
+	glVertex3f(0.f, 0.f, 0.f);
+	glVertex3f(0.f, 1000.f, 0.f);
+	glColor3f(0.f, 0.f, 1.f);
+	glVertex3f(0.f, 0.f, 0.f);
+	glVertex3f(0.f, 0.f, 1000.f);
+	glEnd();
 }
 
 bool EndSceneOpenGL()
