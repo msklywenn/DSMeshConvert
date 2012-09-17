@@ -14,7 +14,8 @@
 
 //#define NVTRISTRIP // buggy?!!
 //#define CETS_PTERDIMAN // http://www.codercorner.com/Strips.htm // memory corruption...
-#define ACTC // http://plunk.org/~grantham/public/actc/
+//#define ACTC // http://plunk.org/~grantham/public/actc/
+#define MULTIPATH // "Multi-Path Algorithm for Triangle Strips" implementation
 #include "NvTriStrip.h"
 #include "cets-pterdiman/Striper.h"
 #include "ac/tc.h"
@@ -22,6 +23,11 @@
 #include "stripping.h"
 
 #include "types.h"
+#include <assert.h>
+
+#include "List.h"
+
+#include "opengl.h"
 
 struct Box
 {
@@ -75,6 +81,8 @@ void PushValue(std::vector<u32>& list, u32& cmdOffset, u32& cmdIndex, u32 cmd, u
 		cmdOffset = list.size() - 1;
 	}
 }
+
+void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripLengths, std::vector<u32>& stripIndices);
 
 int Convert(const char* input, const char* output)
 {
@@ -140,6 +148,8 @@ int Convert(const char* input, const char* output)
 		fprintf(stderr, "Model is too complex, not exporting\n");
 		return 3;
 	}
+
+	InitOpenGL();
 
 	//std::vector<u32> indices;
 	//for ( u32 i = 0 ; i < mesh->mNumFaces ; i++ )
@@ -230,6 +240,29 @@ int Convert(const char* input, const char* output)
     }
 	actcEndOutput(tc);
 #endif
+#ifdef MULTIPATH
+	std::vector<u32> indices;
+	u32 nbIndices = mesh->mNumFaces * 3;
+	indices.reserve(nbIndices);
+	for ( u32 i = 0 ; i < nbIndices / 3 ; i++ )
+	{
+		indices.push_back(mesh->mFaces[i].mIndices[0]);
+		indices.push_back(mesh->mFaces[i].mIndices[1]);
+		indices.push_back(mesh->mFaces[i].mIndices[2]);
+	}
+	u32 nbStrips = 0;
+	std::vector<u32> stripLengths;
+	std::vector<u32> stripIndices;
+	extern float* vertices;
+	vertices = new float[mesh->mNumVertices * 3];
+	for ( u32 i = 0 ; i < mesh->mNumVertices ; i++ )
+	{
+		vertices[i * 3 + 0] = mesh->mVertices[i].x;
+		vertices[i * 3 + 1] = mesh->mVertices[i].y;
+		vertices[i * 3 + 2] = mesh->mVertices[i].z;
+	}
+	MultiPathStripper(indices, stripLengths, stripIndices);
+#endif
 	printf("%d strips generated for %d triangles\n", nbStrips, mesh->mNumFaces);
 
 	// TODO: AABB => OBB, for higher precision
@@ -303,6 +336,10 @@ int Convert(const char* input, const char* output)
 		u32 idxLen = stripLengths[i];
 		PushValue(list, command, cmdindex, 0x40, 2); // begin triangle strip
 		//printf("begin strip\n");
+#endif
+#ifdef MULTIPATH
+		u32 idxLen = stripLengths[i];
+		PushValue(list, command, cmdindex, 0x40, 2); // start strip
 #endif
 
 		for ( u32 j = idxLen ; j > 0 ; j--, idx++ )

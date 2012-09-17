@@ -59,7 +59,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp.lib;%(AdditionalDependencies);OpenGL32.lib;glu32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>assimp--1.1.700-sdk\lib\assimp_debug-dll_win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine>MachineX86</TargetMachine>
@@ -86,6 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="multipath.cpp" />
     <ClCompile Include="NvTriStrip\NvTriStrip.cpp" />
     <ClCompile Include="NvTriStrip\NvTriStripObjects.cpp" />
     <ClCompile Include="cets-pterdiman\Adjacency.cpp" />
@@ -95,9 +96,11 @@
     <ClCompile Include="cets-pterdiman\Strips.cpp" />
     <ClCompile Include="ac\tc.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="opengl.cpp" />
     <ClCompile Include="stripping.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="List.h" />
     <ClInclude Include="NvTriStrip\NvTriStrip.h" />
     <ClInclude Include="NvTriStrip\NvTriStripObjects.h" />
     <ClInclude Include="NvTriStrip\VertexCache.h" />
@@ -106,6 +109,7 @@
     <ClInclude Include="cets-pterdiman\RevisitedRadix.h" />
     <ClInclude Include="cets-pterdiman\Striper.h" />
     <ClInclude Include="ac\tc.h" />
+    <ClInclude Include="opengl.h" />
     <ClInclude Include="stripping.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
