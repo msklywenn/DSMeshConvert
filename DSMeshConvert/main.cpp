@@ -113,6 +113,8 @@ int Convert(const char* input, const char* output)
 		| aiComponent_CAMERAS
 		| aiComponent_MATERIALS);
 
+	printf("Loading %s...", input);
+
 	// Import file
 	const aiScene* scene = importer.ReadFile(input,
 		aiProcess_FixInfacingNormals
@@ -127,6 +129,8 @@ int Convert(const char* input, const char* output)
 		| aiProcess_OptimizeMeshes 
 		| aiProcess_ImproveCacheLocality
 		| aiProcess_RemoveComponent);
+
+	puts(" done");
 
 	if ( scene == 0 )
 	{
@@ -149,7 +153,10 @@ int Convert(const char* input, const char* output)
 		return 3;
 	}
 
+	printf("Initializing OpenGL\n");
 	InitOpenGL();
+
+	printf("Stripping...\n");
 
 	//std::vector<u32> indices;
 	//for ( u32 i = 0 ; i < mesh->mNumFaces ; i++ )
@@ -265,6 +272,8 @@ int Convert(const char* input, const char* output)
 #endif
 	printf("%d strips generated for %d triangles\n", nbStrips, mesh->mNumFaces);
 
+	puts("Scaling...");
+
 	// TODO: AABB => OBB, for higher precision
 	Box box = ComputeBoundingBox(mesh->mVertices, mesh->mNumVertices);
 	aiVector3D minDS(-7.99f);
@@ -276,6 +285,8 @@ int Convert(const char* input, const char* output)
 		box.max.z * minDS.z - box.min.z * maxDS.z);
 	translate = translate / scale;
 	scale = (maxDS - minDS) / scale;
+
+	puts("Generating display list...");
 
 	// Generate display list
 	std::vector<u32> list;
@@ -390,10 +401,14 @@ int Convert(const char* input, const char* output)
 		}
 	}
 
+	printf("Exporting to %s...", output);
+
 	// Output file
 	FILE* f = fopen(output, "wb");
 	fwrite(&list[0], sizeof(list[0]), list.size(), f);
 	fclose(f);
+
+	puts(" done");
 
 #ifdef NVTRISTRIP
 	delete[] strips;

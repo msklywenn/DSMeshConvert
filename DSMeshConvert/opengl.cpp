@@ -26,6 +26,7 @@ float rotatePhi = 0.f;
 float rotateTheta = 0.f;
 float dist = 4.f;
 float h = .5f;
+float scale = 1.f;
 
 static LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -141,6 +142,7 @@ void BeginSceneOpenGL()
 	glVertex3f(0.f, 0.f, 0.f);
 	glVertex3f(0.f, 0.f, 1000.f);
 	glEnd();
+	glScalef(scale, scale, scale);
 }
 
 bool EndSceneOpenGL()
@@ -162,18 +164,17 @@ bool EndSceneOpenGL()
 				break;
 
 			case WM_KEYDOWN:
-				if ( msg.wParam == 'S' )
-					return false;
-				if ( msg.wParam == VK_ESCAPE )
-					exit(0);
-				if ( msg.wParam == VK_DOWN )
-					dist = maxf(dist + 0.2f, 1.f);
-				if ( msg.wParam == VK_UP )
-					dist = minf(dist - 0.2f, 10.f);
-				if ( msg.wParam == 'Y' )
-					h = maxf(h + 0.02f, -5.f);
-				if ( msg.wParam == 'H' )
-					h = minf(h - 0.02f, 5.f);
+				switch ( msg.wParam )
+				{
+					case 'S' : return false;
+					case VK_ESCAPE: exit(0);
+					case VK_DOWN: dist = maxf(dist + .02f, 1.f); break;
+					case VK_UP: dist = minf(dist - 0.02f, 10.f); break;
+					case 'Y': h = maxf(h + .02f, -5.f); break;
+					case 'H': h = minf(h - .02f, 5.f); break;
+					case 'Z': scale *= 2.f; break;
+					case 'A': scale /= 2.f; break;
+				}
 				break;
 
 			case WM_MOUSEMOVE:

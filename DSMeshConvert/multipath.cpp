@@ -5,7 +5,7 @@
 #include "List.h"
 #include "opengl.h"
 
-#define MAX_STRIPS 1024
+#define MAX_STRIPS 16384
 
 float* vertices;
 
@@ -31,8 +31,11 @@ struct Face
 
 	LIST_LINK(Face) dualLink;
 	LIST_LINK(Face) stripLink;
+	LIST_LINK(Face) freeLink;
 
-	Face() : connectivity(0), dualConnectivity(0), set(UNCONNECTED), strip(-1) { adj[0] = adj[1] = adj[2] = 0; dual[0] = dual[1] = dual[2] = false; }
+	s32 freeStrip;
+
+	Face() : connectivity(0), dualConnectivity(0), set(UNCONNECTED), strip(-1), freeStrip(-1) { adj[0] = adj[1] = adj[2] = 0; dual[0] = dual[1] = dual[2] = false; }
 
 	void RemoveFromDual(Face* f)
 	{
@@ -325,19 +328,24 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 	u32 nbStrips = 0;
 	LIST_DECLARE(Face, stripLink) strips[MAX_STRIPS];
 
+	LIST_DECLARE(Face, freeLink) freeStrips;
+
 	// stripify
 	for ( u32 e = 0 ; e < nbEdges ; e++ )
 	{
 #ifdef _DEBUG
-		u32 realNbStrips = 0;
-		for ( u32 i = 0 ; i < nbStrips ; i++ )
-			if ( !strips[i].Empty() )
-				realNbStrips++;
+		if ( e % 32 == 0 )
+		{
+			u32 realNbStrips = 0;
+			for ( u32 i = 0 ; i < nbStrips ; i++ )
+				if ( !strips[i].Empty() )
+					realNbStrips++;
 
-		printf("[%d] strips:%d(%d) U0:%d U1:%d C1:%d U2:%d C2:%d U3:%d\n",
-			e, realNbStrips, nbStrips,
-			Length(unconnected[0]), Length(unconnected[1]), Length(connected[0]),
-			Length(unconnected[2]), Length(connected[1]), Length(unconnected[3]));
+			printf("[%d] strips:%d(%d) U0:%d U1:%d C1:%d U2:%d C2:%d U3:%d\n",
+				e, realNbStrips, nbStrips,
+				Length(unconnected[0]), Length(unconnected[1]), Length(connected[0]),
+				Length(unconnected[2]), Length(connected[1]), Length(unconnected[3]));
+		}
 #endif
 		Face* face[2] = { 0, 0 };
 		if ( !unconnected[1].Empty() )
@@ -373,15 +381,27 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		assert(face[0]->dualConnectivity > 0);
 		face[0]->dualLink.Unlink();
 
-		for ( u32 i = 0 ; face[1] == 0 && i < face[0]->connectivity ; i++ )
+		u32 power = 0;
+		for ( u32 i = 0 ; i < face[0]->connectivity ; i++ )
 		{
 			if ( face[0]->dual[i] )
-				face[1] = face[0]->adj[i];
+			{
+				//u32 p = 1;
+				//u32 p = (3 - face[0]->adj[i]->dualConnectivity) + 1 + face[0]->adj[i]->set * 10;
+				u32 p = face[0]->adj[i]->dualConnectivity + 1 + face[0]->adj[i]->set * 10;
+				//u32 p = face[0]->adj[i]->dualConnectivity + 1 + (2 - face[0]->adj[i]->set) * 10;
+				//u32 p = face[0]->adj[i]->strip + 10;
+				if ( p > power )
+				{
+					face[1] = face[0]->adj[i];
+					power = p;
+				}
+			}
 		}
 		assert(face[1]);
 		face[1]->dualLink.Unlink();
 
-		ShowDebug(faces, nbTris, face[0], face[1], strips, nbStrips);
+		//ShowDebug(faces, nbTris, face[0], face[1], strips, nbStrips);
 
 		assert(face[0]->set != Face::FULLY_CONNECTED);
 		assert(face[1]->set != Face::FULLY_CONNECTED);
@@ -392,6 +412,7 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		{
 			if ( face[0]->strip != face[1]->strip )
 			{
+				// merge one strip into the other
 				LIST_DECLARE(Face, stripLink)& strip0 = strips[face[0]->strip];
 				LIST_DECLARE(Face, stripLink)& strip1 = strips[face[1]->strip];
 				Face* strip0head = strip0.Head();
@@ -400,6 +421,10 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 				Face* strip1tail = strip1.Tail();
 				if ( strip0.Head()->IsAdjacent(strip1.Tail()) )
 				{
+					freeStrips.InsertHead(face[1]);
+					assert(face[1]->freeStrip == -1);
+					face[1]->freeStrip = face[1]->strip;
+
 					Face* f = strip1.Tail();
 					while ( f )
 					{
@@ -414,6 +439,10 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 				}
 				else if ( strip1.Head()->IsAdjacent(strip0.Tail()) )
 				{
+					freeStrips.InsertHead(face[0]);
+					assert(face[0]->freeStrip == -1);
+					face[0]->freeStrip = face[0]->strip;
+
 					Face* f = strip0.Tail();
 					while ( f )
 					{
@@ -428,6 +457,10 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 				}
 				else if ( strip1.Tail()->IsAdjacent(strip0.Tail()) )
 				{
+					freeStrips.InsertHead(face[1]);
+					assert(face[1]->freeStrip == -1);
+					face[1]->freeStrip = face[1]->strip;
+
 					Face* f = strip1.Tail();
 					while ( f )
 					{
@@ -442,6 +475,10 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 				}
 				else if ( strip1.Head()->IsAdjacent(strip0.Head()) )
 				{
+					freeStrips.InsertHead(face[1]);
+					assert(face[1]->freeStrip == -1);
+					face[1]->freeStrip = face[1]->strip;
+
 					Face* f = strip1.Head();
 					while ( f )
 					{
@@ -464,6 +501,7 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		{
 			if ( face[1]->set != Face::CONNECTED )
 			{
+				// attach face to strip
 				LIST_DECLARE(Face, stripLink)& strip = strips[face[0]->strip];
 				if ( face[0]->stripLink.Next() == 0 )
 				{
@@ -484,6 +522,7 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		{
 			if ( face[0]->set != Face::CONNECTED )
 			{
+				// attach face to strip
 				LIST_DECLARE(Face, stripLink)& strip = strips[face[1]->strip];
 				if ( face[1]->stripLink.Next() == 0 )
 				{
@@ -501,6 +540,7 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		}
 		else
 		{
+			// try to find a strip where both faces can be attached to
 			assert(face[0]->set != Face::FULLY_CONNECTED);
 			assert(face[1]->set != Face::FULLY_CONNECTED);
 			for ( u32 s = 0 ; stripID == -1 && s < nbStrips ; s++ )
@@ -589,10 +629,20 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 			}
 			if ( stripID == -1 )
 			{
-				assert(nbStrips < MAX_STRIPS);
-				stripID = nbStrips;
+				// create a new strip
+				if ( !freeStrips.Empty() )
+				{
+					stripID = freeStrips.Head()->freeStrip;
+					freeStrips.Head()->freeStrip = -1;
+					freeStrips.Head()->freeLink.Unlink();
+				}
+				else
+				{
+					assert(nbStrips < MAX_STRIPS);
+					stripID = nbStrips;
+					nbStrips++;
+				}
 				LIST_DECLARE(Face, stripLink)* strip = &strips[stripID];
-				nbStrips++;
 				assert(face[0] && face[1]);
 				assert(!face[0]->stripLink.IsLinked());
 				assert(!face[1]->stripLink.IsLinked());
@@ -604,6 +654,7 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 			}
 		}
 
+		// tag faces
 		if ( stripID != -1 )
 		{
 			for ( u32 i = 0 ; i < 2 ; i++ )
@@ -620,6 +671,7 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 			}
 		}
 
+		// update dual graph
 		for ( u32 f = 0 ; f < 2 ; f++ )
 		{
 			if ( face[f]->strip != -1 )
@@ -663,9 +715,20 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		Face* f = unconnected[0].Tail();
 		f->dualLink.Unlink();
 
-		assert(nbStrips < MAX_STRIPS);
-		LIST_DECLARE(Face, stripLink)& strip = strips[nbStrips];
-		nbStrips++;
+		u32 stripID = -1;
+		if ( !freeStrips.Empty() )
+		{
+			stripID = freeStrips.Head()->freeStrip;
+			freeStrips.Head()->freeStrip = -1;
+			freeStrips.Head()->freeLink.Unlink();
+		}
+		else
+		{
+			assert(nbStrips < MAX_STRIPS);
+			stripID = nbStrips;
+			nbStrips++;
+		}
+		LIST_DECLARE(Face, stripLink)& strip = strips[stripID];
 		strip.InsertHead(f);
 	}
 
