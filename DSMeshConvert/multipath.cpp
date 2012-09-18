@@ -194,7 +194,7 @@ void DrawEdge(Face* a, Face* b)
 	glEnd();
 }
 
-void DrawStrip(LIST_DECLARE(Face, stripLink)& strip, u32 color)
+void DrawStrip(LIST_DECLARE(Face, stripLink)& strip, u32 color, float alpha, bool headtail)
 {
 	if ( strip.Head() == 0 )
 		return;
@@ -204,17 +204,20 @@ void DrawStrip(LIST_DECLARE(Face, stripLink)& strip, u32 color)
 	Face* f = strip.Head();
 	while ( f )
 	{
-		ColorOpenGL(color, .5f);
+		ColorOpenGL(color, alpha);
 		DrawFace(*f);
 		f = f->stripLink.Next();
 	}
 	glEnd();
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	ColorOpenGL(1);
-	DrawBorder(*strip.Head());
-	ColorOpenGL(0);
-	DrawBorder(*strip.Tail());
+	if ( headtail )
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		ColorOpenGL(1);
+		DrawBorder(*strip.Head());
+		ColorOpenGL(0);
+		DrawBorder(*strip.Tail());
+	}
 }
 
 void DrawAdjacency(Face* f)
@@ -236,7 +239,7 @@ void ShowDebug(Face* faces, u32 nbTris, Face* f0, Face* f1, LIST_DECLARE(Face, s
 
 		for ( u32 i = 0 ; i < nbStrips ; i++ )
 		{
-			DrawStrip(strips[i], i);
+			DrawStrip(strips[i], i, .5f, TRUE);
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -258,6 +261,19 @@ void ShowDebug(Face* faces, u32 nbTris, Face* f0, Face* f1, LIST_DECLARE(Face, s
 			DrawAdjacency(f0);
 			glColor3f(0.f, 0.f, 1.f);
 			DrawAdjacency(f1);
+		}
+	}
+}
+
+void ShowStrips(LIST_DECLARE(Face, stripLink) strips[MAX_STRIPS], u32 nbStrips)
+{
+	while ( EndSceneOpenGL() )
+	{
+		BeginSceneOpenGL();
+
+		for ( u32 i = 0 ; i < nbStrips ; i++ )
+		{
+			DrawStrip(strips[i], i, 1.f, FALSE);
 		}
 	}
 }
@@ -334,18 +350,18 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 	for ( u32 e = 0 ; e < nbEdges ; e++ )
 	{
 #ifdef _DEBUG
-		if ( e % 32 == 0 )
-		{
-			u32 realNbStrips = 0;
-			for ( u32 i = 0 ; i < nbStrips ; i++ )
-				if ( !strips[i].Empty() )
-					realNbStrips++;
+		//if ( e % 32 == 0 )
+		//{
+		//	u32 realNbStrips = 0;
+		//	for ( u32 i = 0 ; i < nbStrips ; i++ )
+		//		if ( !strips[i].Empty() )
+		//			realNbStrips++;
 
-			printf("[%d] strips:%d(%d) U0:%d U1:%d C1:%d U2:%d C2:%d U3:%d\n",
-				e, realNbStrips, nbStrips,
-				Length(unconnected[0]), Length(unconnected[1]), Length(connected[0]),
-				Length(unconnected[2]), Length(connected[1]), Length(unconnected[3]));
-		}
+		//	printf("[%d] strips:%d(%d) U0:%d U1:%d C1:%d U2:%d C2:%d U3:%d\n",
+		//		e, realNbStrips, nbStrips,
+		//		Length(unconnected[0]), Length(unconnected[1]), Length(connected[0]),
+		//		Length(unconnected[2]), Length(connected[1]), Length(unconnected[3]));
+		//}
 #endif
 		Face* face[2] = { 0, 0 };
 		if ( !unconnected[1].Empty() )
@@ -744,7 +760,8 @@ void MultiPathStripper(const std::vector<u32>& indices, std::vector<u32>& stripL
 		Length(unconnected[2]), Length(connected[1]), Length(unconnected[3]));
 #endif
 
-	ShowDebug(faces, nbTris, 0, 0, strips, nbStrips);
+	glEnable(GL_DEPTH_TEST);
+	ShowStrips(strips, nbStrips);
 
 	delete[] faces;
 }

@@ -126,8 +126,8 @@ int Convert(const char* input, const char* output)
 		| aiProcess_FindDegenerates
 		| aiProcess_SortByPType
 		| aiProcess_FindInstances 
-		| aiProcess_OptimizeMeshes 
-		| aiProcess_ImproveCacheLocality
+		//| aiProcess_OptimizeMeshes 
+		//| aiProcess_ImproveCacheLocality
 		| aiProcess_RemoveComponent);
 
 	puts(" done");
